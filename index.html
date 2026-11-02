@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="CHRONO — premium study timer and progress tracker">
+<link rel="manifest" href="manifest.webmanifest">
+<title>CHRONO — Study Command Center</title>
+<style>
+:root{--bg:#000;--panel:#101010;--panel2:#151515;--line:#262626;--muted:#888;--white:#f5f5f5;--accent:#b7f36b;--red:#ff7777}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.02em}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;color:inherit}
+.app{max-width:1100px;margin:auto;min-height:100vh;padding:22px 18px 100px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.brand{font-size:14px;font-weight:800;letter-spacing:.22em}.brand span{color:var(--accent)}
+.pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:30px;padding:8px 11px}
+nav{position:fixed;z-index:5;bottom:0;left:0;right:0;background:rgba(8,8,8,.94);backdrop-filter:blur(18px);border-top:1px solid var(--line);display:flex;justify-content:center;gap:5px;padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom))}
+nav button{background:transparent;color:#777;padding:10px 14px;border-radius:12px;font-size:12px}nav button.active{background:#202020;color:#fff}
+.page{display:none}.page.active{display:block}
+.clock-wrap{text-align:center;padding:32px 0 22px}
+.date{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.clock{display:flex;justify-content:center;gap:7px;margin:16px auto 10px;font-variant-numeric:tabular-nums;font-family:"SF Mono",ui-monospace,monospace;font-weight:700;font-size:clamp(54px,13vw,116px);letter-spacing:-.09em}
+.digit{background:linear-gradient(180deg,#191919,#0c0c0c);border:1px solid #252525;border-radius:13px;padding:5px 9px;min-width:.72em;box-shadow:0 12px 35px #000}
+.digit.flip{animation:flip .28s ease}@keyframes flip{0%{transform:rotateX(0);opacity:1}50%{transform:rotateX(-55deg);opacity:.45}100%{transform:rotateX(0);opacity:1}}
+.clock.slide .digit{animation:slide .25s ease}@keyframes slide{from{transform:translateY(9px);opacity:.2}to{transform:none;opacity:1}}
+.clock.fade .digit{animation:fade .25s ease}@keyframes fade{from{opacity:.1}to{opacity:1}}
+.clock.rolling .digit{animation:roll .3s ease}@keyframes roll{from{transform:translateY(-12px);filter:blur(3px)}to{transform:none;filter:none}}
+.clock.minimal .digit{animation:none}
+.subline{color:var(--muted);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.metric small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em}.metric strong{display:block;font-size:25px;margin-top:7px;font-variant-numeric:tabular-nums}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px}.section-head h2{font-size:17px;margin:0}.muted{color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input,select,textarea{background:#090909;color:#fff;border:1px solid var(--line);border-radius:11px;padding:12px;min-width:0;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#777}
+.field{flex:1;min-width:130px}.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 7px 2px}
+.btn{background:#eee;color:#080808;border-radius:12px;padding:12px 17px;font-weight:750}.btn.secondary{background:#222;color:#eee;border:1px solid #333}.btn.ghost{background:transparent;border:1px solid var(--line);color:#ddd}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.timer-display{text-align:center;font:700 clamp(44px,11vw,76px)/1.1 "SF Mono",ui-monospace,monospace;margin:18px 0}
+.timer-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+.progress{height:7px;background:#252525;border-radius:20px;overflow:hidden;margin-top:12px}.progress i{display:block;height:100%;background:var(--accent);border-radius:20px;width:0}
+.list{display:flex;flex-direction:column;gap:8px}.item{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#151515;border:1px solid #252525;border-radius:13px;padding:12px}
+.item b{font-size:13px}.item small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.tag{font-size:10px;border:1px solid #333;border-radius:20px;padding:5px 8px;color:#bbb;white-space:nowrap}
+.chart{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.donut{width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--accent) 0 30%,#6b8cff 30% 55%,#b78cff 55% 75%,#444 75%);position:relative;flex:none}
+.donut:after{content:"";position:absolute;inset:19px;background:#101010;border-radius:50%}
+.legend{display:grid;gap:9px;flex:1;min-width:150px}.legend div{display:flex;justify-content:space-between;color:#bbb;font-size:12px}
+.bars{display:flex;align-items:end;gap:8px;height:150px;padding:12px 2px 0;border-bottom:1px solid #333}.barcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:7px}.bar{width:min(28px,80%);background:linear-gradient(180deg,var(--accent),#637d42);border-radius:7px 7px 2px 2px;min-height:2px}.barcol small{font-size:10px;color:var(--muted)}
+.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.heat{aspect-ratio:1;border-radius:4px;background:#242424}.heat.l1{background:#42552e}.heat.l2{background:#607d3e}.heat.l3{background:#8eae55}.heat.l4{background:#c1e87b}
+h1{font-size:28px;letter-spacing:-.06em;margin:8px 0 4px}h2{letter-spacing:-.04em}.empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:end;justify-content:center;z-index:10;padding:12px}.modal.show{display:flex}.sheet{width:min(560px,100%);background:#121212;border:1px solid #303030;border-radius:22px;padding:20px;max-height:88vh;overflow:auto}.sheet h2{margin:0 0 16px}
+.toast{position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#eee;color:#111;border-radius:30px;padding:10px 16px;font-size:12px;display:none;z-index:20}
+@media(min-width:760px){.app{padding:30px 30px 110px}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.clock-wrap{padding:45px 0 35px}.card{padding:22px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="app">
+<header><div class="brand">CHRONO<span>.</span></div><div class="pill" id="streakPill">0 DAY STREAK</div></header>
+
+<section id="home" class="page active">
+ <div class="clock-wrap">
+  <div class="date" id="todayDate"></div>
+  <div class="clock flip" id="worldClock"><span class="digit">00</span><span class="digit">:</span><span class="digit">00</span><span class="digit">:</span><span class="digit">00</span></div>
+  <div class="subline">YOUR TIME. YOUR PROGRESS.</div>
+ </div>
+ <div class="grid">
+  <div class="card metric"><small>Studied today</small><strong id="todayTotal">0h 00m</strong></div>
+  <div class="card metric"><small>Daily goal</small><strong id="goalText">8h 00m</strong><div class="progress"><i id="goalBar"></i></div></div>
+  <div class="card metric"><small>Sessions</small><strong id="todaySessions">0</strong></div>
+  <div class="card metric"><small>Current streak</small><strong id="streakValue">0 days</strong></div>
+ </div>
+ <div class="section-head"><h2>Focus session</h2><span class="tag" id="timerModeLabel">STOPWATCH</span></div>
+ <div class="card">
+  <div class="row">
+   <div class="field"><label>SUBJECT</label><select id="subjectSelect"></select></div>
+   <div class="field"><label>SESSION NAME</label><input id="sessionName" placeholder="e.g. Polity — Parliament"></div>
+  </div>
+  <div class="row" style="margin-top:12px">
+   <div class="field"><label>TIMER MODE</label><select id="timerMode"><option value="stopwatch">Stopwatch</option><option value="countdown">Countdown</option><option value="pomodoro">Pomodoro</option></select></div>
+   <div class="field"><label>DURATION (MIN)</label><input id="duration" type="number" min="1" value="50"></div>
+  </div>
+  <div class="timer-display" id="timerDisplay">00:00:00</div>
+  <div class="timer-actions">
+   <button class="btn" id="startBtn">Start focus</button><button class="btn secondary" id="pauseBtn" disabled>Pause</button><button class="btn ghost" id="finishBtn" disabled>Finish</button>
+  </div>
+  <p class="muted" style="font-size:11px;text-align:center;margin:14px 0 0" id="timerHint">Choose a subject and name, then start.</p>
+ </div>
+ <div class="section-head"><h2>Today's sessions</h2><button class="btn ghost" onclick="showPage('sessions')">View all</button></div>
+ <div class="list" id="todayList"></div>
+</section>
+
+<section id="sessions" class="page">
+ <h1>Sessions</h1><p class="muted">Your recorded study history.</p>
+ <div class="row" style="margin:18px 0"><div class="field"><label>SEARCH</label><input id="searchSessions" placeholder="Search subject or session"></div><div class="field"><label>DATE</label><input id="filterDate" type="date"></div><button class="btn secondary" onclick="clearFilters()">Clear</button></div>
+ <div class="list" id="allSessions"></div>
+ <div class="card"><h2 style="font-size:15px">Add a past session</h2><div class="row"><div class="field"><label>SUBJECT</label><select id="manualSubject"></select></div><div class="field"><label>DURATION (MIN)</label><input id="manualDuration" type="number" min="1" value="60"></div></div><div class="field" style="margin-top:10px"><label>SESSION NAME</label><input id="manualName" placeholder="What did you study?"></div><button class="btn" style="margin-top:12px" onclick="addManual()">Add record</button></div>
+</section>
+
+<section id="analytics" class="page">
+ <h1>Analytics</h1><p class="muted">A clear view of your preparation.</p>
+ <div class="row" style="margin:18px 0"><div class="field"><label>PERIOD</label><select id="analyticsPeriod"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="month">This month</option><option value="all">All time</option></select></div></div>
+ <div class="grid">
+  <div class="card metric"><small>Total study time</small><strong id="periodTotal">0h 00m</strong></div>
+  <div class="card metric"><small>Study days</small><strong id="periodDays">0</strong></div>
+  <div class="card metric"><small>Sessions</small><strong id="periodSessions">0</strong></div>
+  <div class="card metric"><small>Daily average</small><strong id="periodAverage">0m</strong></div>
+ </div>
+ <div class="card"><div class="section-head" style="margin-top:0"><h2>Subject distribution</h2><span class="tag">FOCUS TIME</span></div><div class="chart"><div class="donut" id="donut"></div><div class="legend" id="legend"></div></div></div>
+ <div class="card"><div class="section-head" style="margin-top:0"><h2>Daily study hours</h2><span class="tag">TREND</span></div><div class="bars" id="bars"></div></div>
+ <div class="card"><div class="section-head" style="margin-top:0"><h2>Consistency heatmap</h2><span class="tag">LAST 12 WEEKS</span></div><div class="heatmap" id="heatmap"></div><p class="muted" style="font-size:11px">Darker to brighter indicates more focused study time.</p></div>
+ <div class="card"><h2 style="font-size:15px">Study insights</h2><div class="list" id="insights"></div></div>
+</section>
+
+<section id="subjects" class="page">
+ <h1>Subjects</h1><p class="muted">Track the time invested in every subject.</p>
+ <div class="card"><div class="row"><div class="field"><label>NEW SUBJECT</label><input id="newSubject" placeholder="e.g. Static GK"></div><button class="btn" onclick="addSubject()">Add</button></div></div>
+ <div class="list" id="subjectList"></div>
+</section>
+
+<section id="profile" class="page">
+ <h1>Profile & settings</h1><p class="muted">Make CHRONO work your way.</p>
+ <div class="card"><h2 style="font-size:15px">Daily target</h2><div class="row"><div class="field"><label>HOURS PER DAY</label><input id="dailyGoal" type="number" min="1" max="24" value="8"></div><button class="btn" onclick="saveGoal()">Save goal</button></div></div>
+ <div class="card"><h2 style="font-size:15px">Clock animation</h2><div class="row"><div class="field"><label>STYLE</label><select id="clockStyle"><option value="flip">Classic Flip</option><option value="slide">Slide Up</option><option value="fade">Fade</option><option value="rolling">Rolling</option><option value="minimal">Minimal</option></select></div><div class="field"><label>SPEED</label><select id="clockSpeed"><option value=".18">Fast</option><option value=".28" selected>Normal</option><option value=".55">Slow</option></select></div></div><p class="muted" style="font-size:11px">Preview is shown on the home clock. Your selection is saved on this device.</p></div>
+ <div class="card"><h2 style="font-size:15px">Data & backup</h2><div class="row"><button class="btn secondary" onclick="exportCSV()">Export CSV</button><button class="btn secondary" onclick="backupJSON()">Backup JSON</button><label class="btn ghost" style="display:inline-block">Restore<input type="file" accept="application/json" onchange="restoreJSON(event)" hidden></label></div><p class="muted" style="font-size:11px">Your records are stored locally in this browser. Export backups regularly.</p></div>
+ <div class="card"><h2 style="font-size:15px">About CHRONO</h2><p class="muted" style="font-size:13px;line-height:1.6">Built for consistent preparation: SSC CGL 2027 · MEA goal. This starter version stores data on this device and works offline after its first load when hosted as a PWA.</p></div>
+</section>
+</div>
+
+<nav>
+ <button class="active" data-page="home">HOME</button><button data-page="sessions">SESSIONS</button><button data-page="analytics">ANALYTICS</button><button data-page="subjects">SUBJECTS</button><button data-page="profile">PROFILE</button>
+</nav>
+
+<div class="modal" id="finishModal"><div class="sheet"><h2>Session complete</h2><p class="muted" id="finishSummary"></p><div class="field"><label>OPTIONAL NOTES</label><textarea id="finishNotes" rows="3" placeholder="What did you cover?"></textarea></div><div class="row" style="margin-top:14px"><button class="btn" onclick="saveFinished()">Save session</button><button class="btn secondary" onclick="discardFinished()">Discard</button></div></div></div>
+
+<script>
+const DEFAULT_SUBJECTS=["Mathematics","English","Reasoning","General Awareness / GS","Current Affairs","Polity","History","Geography","Economics","Science","Computer","Mock Test","Revision","Other"];
+const COLORS=["#b7f36b","#7b9cff","#c49aff","#ffb86b","#64d8c2","#ff7c91","#d5d5d5","#a7a7a7"];
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem("chrono_"+k))??d}catch{return d}};
+const save=(k,v)=>localStorage.setItem("chrono_"+k,JSON.stringify(v));
+let subjects=load("subjects",DEFAULT_SUBJECTS),sessions=load("sessions",[]),goal=load("goal",8),settings=load("settings",{style:"flip",speed:".28"});
+let timer={running:false,paused:false,mode:"stopwatch",subject:"Mathematics",name:"",duration:50,startedAt:null,pausedAt:null,elapsedBefore:0,breaks:0};
+let pending=null,clockLast="";
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+function fmt(sec){sec=Math.max(0,Math.floor(sec));let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return `${pad(h)}:${pad(m)}:${pad(s)}`}
+function human(sec){let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60);return h?`${h}h ${pad(m)}m`:`${m}m`}
+function dayKey(d=new Date()){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function parseDay(k){return new Date(k+"T12:00:00")}
+function totalFor(list){return list.reduce((a,s)=>a+(s.duration||0),0)}
+function toast(msg){$("toast").textContent=msg;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2100)}
+function showPage(p){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===p));document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));renderAll()}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+function fillSubjects(){["subjectSelect","manualSubject"].forEach(id=>{let el=$(id),v=el.value;el.innerHTML=subjects.map(s=>`<option>${escapeHTML(s)}</option>`).join("");if(subjects.includes(v))el.value=v})}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function todaySessions(){return sessions.filter(s=>s.date===dayKey())}
+function streak(){let days=[...new Set(sessions.filter(s=>s.duration>=goal*3600).map(s=>s.date))].sort().reverse();let n=0,d=new Date();if(!days.includes(dayKey()))d.setDate(d.getDate()-1);while(days.includes(dayKey(d))){n++;d.setDate(d.getDate()-1)}return n}
+function updateClock(){let d=new Date(),t=`${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;$("todayDate").textContent=d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});let clock=$("worldClock");clock.className="clock "+settings.style;clock.style.animationDuration=settings.speed+"s";if(t!==clockLast){let parts=[t.slice(0,2),":",t.slice(2,4),":",t.slice(4,6)];clock.innerHTML=parts.map((p,i)=>`<span class="digit">${p}</span>`).join("");clockLast=t}}
+function elapsed(){if(!timer.running)return timer.elapsedBefore;let end=timer.paused?timer.pausedAt:Date.now();return timer.elapsedBefore+(end-timer.startedAt)/1000}
+function timerTick(){if(timer.running&&!timer.paused&&timer.mode!=="stopwatch"&&timer.mode!=="pomodoro"){let left=timer.duration*60-elapsed();if(left<=0){timer.elapsedBefore=timer.duration*60;timer.running=false;prepareFinish();return}}$("timerDisplay").textContent=fmt(timer.mode==="countdown"?Math.max(0,timer.duration*60-elapsed()):elapsed())}
+function startTimer(){if(timer.running)return;timer.subject=$("subjectSelect").value;timer.name=$("sessionName").value.trim()||"Study session";timer.mode=$("timerMode").value;timer.duration=Math.max(1,Number($("duration").value)||50);timer.startedAt=Date.now();timer.pausedAt=null;timer.running=true;timer.paused=false;$("startBtn").disabled=true;$("pauseBtn").disabled=false;$("finishBtn").disabled=false;$("timerHint").textContent=`${timer.subject} · ${timer.name}`;save("activeTimer",timer);timerTick()}
+function pauseTimer(){if(!timer.running)return;if(!timer.paused){timer.pausedAt=Date.now();timer.paused=true;$("pauseBtn").textContent="Resume"}else{timer.elapsedBefore+= (timer.pausedAt-timer.startedAt)/1000;timer.startedAt=Date.now();timer.pausedAt=null;timer.paused=false;$("pauseBtn").textContent="Pause"}save("activeTimer",timer);timerTick()}
+function finishTimer(){if(!timer.running)return;timer.elapsedBefore=elapsed();timer.running=false;prepareFinish()}
+function prepareFinish(){let secs=Math.floor(timer.elapsedBefore);if(secs<1){resetTimer();return}pending={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),subject:timer.subject,name:timer.name,duration:secs,date:dayKey(new Date(timer.startedAt||Date.now())),start:new Date(timer.startedAt||Date.now()).toISOString(),end:new Date().toISOString(),notes:"",status:"completed"};$("finishSummary").textContent=`${pending.subject} · ${pending.name} · ${human(secs)}`;$("finishModal").classList.add("show");$("startBtn").disabled=false;$("pauseBtn").disabled=true;$("finishBtn").disabled=true;save("activeTimer",null)}
+function saveFinished(){if(!pending)return;pending.notes=$("finishNotes").value.trim();sessions.push(pending);save("sessions",sessions);pending=null;$("finishNotes").value="";$("finishModal").classList.remove("show");resetTimer();renderAll();toast("Study session saved")}
+function discardFinished(){pending=null;$("finishModal").classList.remove("show");resetTimer()}
+function resetTimer(){timer={running:false,paused:false,mode:"stopwatch",subject:"Mathematics",name:"",duration:50,startedAt:null,pausedAt:null,elapsedBefore:0,breaks:0};$("timerDisplay").textContent="00:00:00";$("pauseBtn").textContent="Pause";$("startBtn").disabled=false;$("pauseBtn").disabled=true;$("finishBtn").disabled=true;$("timerHint").textContent="Choose a subject and name, then start.";save("activeTimer",null)}
+$("startBtn").onclick=startTimer;$("pauseBtn").onclick=pauseTimer;$("finishBtn").onclick=finishTimer;
+function addManual(){let mins=Math.max(1,Number($("manualDuration").value)||1),name=$("manualName").value.trim()||"Manual study record",date=$("filterDate").value||dayKey();sessions.push({id:String(Date.now()),subject:$("manualSubject").value,name,duration:mins*60,date,start:new Date(date+"T09:00:00").toISOString(),end:new Date(date+"T09:00:00").toISOString(),notes:"Added manually",status:"manual"});save("sessions",sessions);$("manualName").value="";renderAll();toast("Record added")}
+function deleteSession(id){if(!confirm("Delete this study record?"))return;sessions=sessions.filter(s=>s.id!==id);save("sessions",sessions);renderAll()}
+function clearFilters(){$("searchSessions").value="";$("filterDate").value="";renderSessions()}
+$("searchSessions").oninput=renderSessions;$("filterDate").onchange=renderSessions;
+function renderSessions(){let q=$("searchSessions").value.toLowerCase(),date=$("filterDate").value;let list=[...sessions].sort((a,b)=>b.start.localeCompare(a.start)).filter(s=>(!q||(s.subject+" "+s.name).toLowerCase().includes(q))&&(!date||s.date===date));$("allSessions").innerHTML=list.length?list.map(s=>`<div class="item"><div><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.subject)} · ${s.date} · ${human(s.duration)}</small></div><button class="btn ghost" onclick="deleteSession('${s.id}')">Delete</button></div>`).join(""):`<div class="empty">No matching study sessions yet.</div>`}
+function renderToday(){let list=todaySessions(),secs=totalFor(list),pct=Math.min(100,secs/(goal*3600)*100);$("todayTotal").textContent=human(secs);$("goalText").textContent=`${goal}h 00m`;$("goalBar").style.width=pct+"%";$("todaySessions").textContent=list.length;$("streakValue").textContent=streak()+" days";$("streakPill").textContent=streak()+" DAY STREAK";$("todayList").innerHTML=list.length?[...list].reverse().map(s=>`<div class="item"><div><b>${escapeHTML(s.name)}</b><small>${escapeHTML(s.subject)} · ${human(s.duration)}</small></div><span class="tag">${s.status==="manual"?"MANUAL":"DONE"}</span></div>`).join(""):`<div class="empty">No study sessions recorded today. Start your first focus session.</div>`}
+function selectedPeriod(){let v=$("analyticsPeriod").value,now=new Date(),start=new Date();if(v==="7")start.setDate(now.getDate()-6);else if(v==="30")start.setDate(now.getDate()-29);else if(v==="month")start=new Date(now.getFullYear(),now.getMonth(),1);else start=new Date(2000,0,1);return {start,end:now}}
+function renderAnalytics(){let {start,end}=selectedPeriod(),list=sessions.filter(s=>parseDay(s.date)>=new Date(start.getFullYear(),start.getMonth(),start.getDate())&&parseDay(s.date)<=new Date(end.getFullYear(),end.getMonth(),end));let secs=totalFor(list),days=new Set(list.map(s=>s.date)).size;$("periodTotal").textContent=human(secs);$("periodDays").textContent=days;$("periodSessions").textContent=list.length;$("periodAverage").textContent=days?human(secs/days):"0m";
+ let by={};list.forEach(s=>by[s.subject]=(by[s.subject]||0)+s.duration);let entries=Object.entries(by).sort((a,b)=>b[1]-a[1]),sum=entries.reduce((a,x)=>a+x[1],0)||1,angle=0,stops=[];entries.forEach(([k,v],i)=>{let next=angle+v/sum*100;stops.push(`${COLORS[i%COLORS.length]} ${angle}% ${next}%`);angle=next});$("donut").style.background=`conic-gradient(${stops.join(",")||"#333 0 100%"})`;$("legend").innerHTML=entries.length?entries.map(([k,v],i)=>`<div><span>${escapeHTML(k)}</span><b>${Math.round(v/sum*100)}%</b></div>`).join(""):`<div>No data yet</div>`;
+ let count=Math.min(7,Math.max(1,Math.ceil((end-start)/86400000)+1)),daily=[];for(let i=count-1;i>=0;i--){let d=new Date(end);d.setDate(end.getDate()-i);let key=dayKey(d);daily.push({key,label:d.toLocaleDateString(undefined,{weekday:"short"}).slice(0,2),sec:totalFor(list.filter(s=>s.date===key))})}let max=Math.max(1,...daily.map(x=>x.sec));$("bars").innerHTML=daily.map(x=>`<div class="barcol"><div class="bar" style="height:${Math.max(2,x.sec/max*100)}%"></div><small>${x.label}</small></div>`).join("");
+ let heat="";for(let i=83;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let h=totalFor(sessions.filter(s=>s.date===dayKey(d))),level=h===0?0:h<7200?1:h<14400?2:h<21600?3:4;heat+=`<div class="heat ${level?"l"+level:""}" title="${dayKey(d)} · ${human(h)}"></div>`}$("heatmap").innerHTML=heat;
+ let insights=[];if(entries.length)insights.push(`${entries[0][0]} is your most-studied subject in this period.`);insights.push(`${days} days with recorded study out of the selected period.`);if(secs)insights.push(`Average focus time per recorded day: ${human(secs/Math.max(1,days))}.`);else insights.push("Start recording sessions to unlock personalised insights.");$("insights").innerHTML=insights.map(x=>`<div class="item"><span style="font-size:12px">${escapeHTML(x)}</span></div>`).join("")}
+$("analyticsPeriod").onchange=renderAnalytics;
+function renderSubjects(){let totals={};sessions.forEach(s=>totals[s.subject]=(totals[s.subject]||0)+s.duration);$("subjectList").innerHTML=subjects.map((s,i)=>`<div class="item"><div><b>${escapeHTML(s)}</b><small>${human(totals[s]||0)} total · ${sessions.filter(x=>x.subject===s).length} sessions</small></div><span class="tag">${Math.round((totals[s]||0)/3600*10)/10} H</span></div>`).join("")}
+function addSubject(){let s=$("newSubject").value.trim();if(!s)return;if(subjects.some(x=>x.toLowerCase()===s.toLowerCase()))return toast("Subject already exists");subjects.push(s);save("subjects",subjects);$("newSubject").value="";fillSubjects();renderSubjects();toast("Subject added")}
+function saveGoal(){goal=Math.max(1,Math.min(24,Number($("dailyGoal").value)||8));save("goal",goal);renderAll();toast("Daily target saved")}
+function exportCSV(){let rows=[["Date","Subject","Session","Duration seconds","Duration minutes","Notes","Status"],...sessions.map(s=>[s.date,s.subject,s.name,s.duration,Math.round(s.duration/60),s.notes||"",s.status||"completed"])];let csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\n");download("chrono-sessions.csv",csv,"text/csv")}
+function backupJSON(){download("chrono-backup.json",JSON.stringify({sessions,subjects,goal,settings},null,2),"application/json")}
+function download(name,data,type){let a=document.createElement("a"),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function restoreJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!Array.isArray(d.sessions)||!Array.isArray(d.subjects))throw Error();sessions=d.sessions;subjects=d.subjects;goal=d.goal||8;settings=d.settings||settings;save("sessions",sessions);save("subjects",subjects);save("goal",goal);save("settings",settings);fillSubjects();renderAll();toast("Backup restored")}catch{toast("Invalid backup file")}};r.readAsText(f)}
+$("clockStyle").onchange=e=>{settings.style=e.target.value;save("settings",settings);clockLast="";updateClock()};
+$("clockSpeed").onchange=e=>{settings.speed=e.target.value;save("settings",settings)};
+function renderAll(){renderToday();renderSessions();renderAnalytics();renderSubjects()}
+function init(){fillSubjects();$("dailyGoal").value=goal;$("clockStyle").value=settings.style;$("clockSpeed").value=settings.speed;let active=load("activeTimer",null);if(active?.running){timer=active;if(!timer.paused){timer.elapsedBefore=active.elapsedBefore||0;timer.startedAt=active.startedAt||Date.now()}$("startBtn").disabled=true;$("pauseBtn").disabled=false;$("finishBtn").disabled=false;$("timerHint").textContent=`Recovered: ${timer.subject} · ${timer.name}`;$("timerMode").value=timer.mode;$("duration").value=timer.duration;$("subjectSelect").value=timer.subject;$("sessionName").value=timer.name}renderAll();updateClock();timerTick()}
+init();setInterval(()=>{updateClock();timerTick()},250);document.addEventListener("visibilitychange",()=>{if(!document.hidden){updateClock();timerTick()}});
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+</script>
+</body></html>
